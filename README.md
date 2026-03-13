@@ -8,15 +8,15 @@
 
 ### The Problem
 
-Honestly, the idea for this came from a realistic potential frustration. In a circumstance where a job interview is coming up for a consumer insights role at a retail company, I would want to prepare the best I could by being able to talk about behavioral economics and shopper psychology. So, I want to be able to understand academic papers on things like consumer decision-making, stuff about choice overload, anchoring effects, and in-store nudge strategies. The problem was that the papers were very unreadable to me. Abstract jargon, lots of pages, statistical tables I didn't know how to interpret. I could skim them, but I couldn't actually extract the "so what" in a way I could talk about confidently in an interview.
+Honestly, the idea for this came from a realistic potential frustration. In a circumstance where a job interview is coming up, for example for a consumer insights role, I would want to prepare the best I could by being able to talk about topics such as shopper psychology. So, I woudl weant to do my reserach and be able to understand the relevant academic papers. The problem is that a lot of the academic papers/jounals are quite unreadable to me. There is a lot of experimental design jargon I dont understand spread over many pages, not to mention the statistical tables I don't know how to interpret. I could skim them, but I couldn't actually understand the "so what" in a way which I could talk about confidently in an interview.
 
-That's what this tool is trying to solve. The Research Paper Explainer lets you upload academic PDFs and ask questions about them in plain English. It pulls the most relevant parts of the paper and explains the findings in a way a non-expert can actually use. The target user is someone like me: a student, job seeker, or early-career professional who needs to understand research quickly without having a PhD in the field.
+That's the goal of this tool. This Research RAG lets you upload academic PDFs and ask questions about them in a way one can understand without having a PHD in the field. This could be useful for any job seeker out there.
 
-### What the AI Does
+### What the AI Does/Recommends
 
-The system uses a retrieval-augmented generation (RAG) approach. In simple terms:
+The system uses retrieval-augmented generation (RAG). This means it:
 
-- It breaks uploaded PDFs into smaller chunks of text
+- Breaks uploaded PDFs into chunks of text the AI can interpret semantically
 - When you ask a question, it finds the chunks most relevant to your question
 - It passes those chunks to a language model (GPT-4o-mini) along with a prompt that says: *explain this like the reader has no background in this field*
 - The answer comes back structured into: a recommendation, the evidence behind it, tradeoffs/limitations, a confidence level, and an override path if you disagree
@@ -25,48 +25,45 @@ The system uses a retrieval-augmented generation (RAG) approach. In simple terms
 
 After reading the AI's output, the user decides:
 
-- Whether the summary actually reflects what the paper is saying (you can verify this by checking the raw retrieved chunks the app shows you)
-- What to do with the information. You can use it in an interview answer, flag it as needing more research, or just discard it
+- Whether the summary actually reflects what the paper is saying (you can verify this by checking the chunks pulled from the text shown below the response)
+- What to do with the information, and the further thinking about how this could be applied to the specific company/industry they are interviewing for.
 
-The system is explicitly not making any real-world recommendation on its own. It's more like a study buddy that has read the paper faster than you did.
 
 ### Who Is Accountable
 
-This is important to spell out because it's easy to forget when a tool gives you a confident-sounding answer:
-
 | Who | What they control | Accountable for |
 |---|---|---|
-| The user (me, a student) | Which papers to upload, what questions to ask, what to do with the output | Any decisions or statements made based on the AI's summaries |
-| The developer (also me) | Prompt wording, chunk size, how retrieval works | Whether the AI gives answers that are honest about their limits |
+| The user (me, a student) | Which papers to upload, what questions to ask, what to do with the output | Any assumptions or statements made based on the AI's summaries |
+| The developer (also me) | Prompt wording, chunk size, how retrieval works | Whether the AI gives answers that are accurate|
 | OpenAI / GPT-4o-mini | Generating language from the retrieved text | Any hallucinated details not grounded in the actual chunks |
-| The original paper authors | The underlying research quality | Validity of the findings being summarized |
+| The original paper authors | The underlying research quality | Validity/accuracy of the findings being summarized |
 
 ---
 
 ## 2. Architecture Diagram
 
-Here's how the system fits together. I've tried to show where the AI stops and where the human takes over, which I think is a very important part from a systems thinking perspective.
+Here's the breakdown of the system's relationships, including where the AI stops and where the human takes over.
 
 ```mermaid
 flowchart TD
     A[Student uploads PDF papers] --> B[PyPDFLoader extracts text]
-    B --> C[Text split into 800-token chunks]
+    B --> C[Text split into chunks]
     C --> D[OpenAI creates embeddings for each chunk]
-    D --> E[(ChromaDB stores chunks + embeddings)]
+    D --> E[(App stores chunks + embeddings)]
 
-    F[Student types a question] --> G[MMR search finds top 4 relevant chunks]
+    F[Student types a question] --> G[Search finds top 4 relevant chunks]
     E --> G
     G --> H[Chunks + question sent to GPT-4o-mini]
-    H --> I[Structured plain-language answer]
+    H --> I[Structured + easy to understand answer]
 
     I --> J{Human decision boundary}
     J --> K[Student reads recommendation + evidence]
-    J --> L[Student checks raw chunks to verify]
-    K --> M[Student decides what to do with it]
+    J --> L[Student checks raw chunk evidence to verify accuracy]
+    K --> M[Student decides what to do with it and how to apply it]
     L --> M
     M --> N[Uses it in interview prep / notes]
     M --> O[Decides to dig deeper or ignore]
-    M --> P[Asks a follow-up question]
+    M --> P[Asks more questions]
 
     style J fill:#FEF9E7,stroke:#F4D03F
     style M fill:#EAFAF1,stroke:#27AE60
@@ -74,7 +71,7 @@ flowchart TD
     style E fill:#EBF5FB,stroke:#2E86C1
 ```
 
-The yellow box is the decision boundary: where the AI's job ends and the student's judgment takes over. The blue boxes are AI components. The green box is where the human is fully in control.
+The yellow box is the decision boundary: where the AI's job ends and the student's judgment begins. The blue boxes are AI components. The green box is where the human is fully in control.
 
 **Accountability flow:**
 
@@ -91,7 +88,7 @@ flowchart LR
 
 ## 3. Working Prototype
 
-The prototype is a Streamlit app. It's not perfect but it works end-to-end and demonstrates the full decision flow.
+The prototype uses a Streamlit app. It's not perfect, and is VERY vibe-coded, but it works!
 
 ### How to run it
 
@@ -115,11 +112,11 @@ streamlit run app.py
 
 ### What it does
 
-- **Sidebar:** upload one or more PDFs, click "Ingest papers". This chunks the text and builds a local vector database
+- **Sidebar:** upload one or more PDFs, click "Ingest papers". This chunks the text and builds a vector database
 - **Main area:** type a question, click "Get answer"
-- The app retrieves the 4 most relevant chunks using max marginal relevance (MMR), which helps avoid getting 4 chunks that all say the same thing
+- The app retrieves the 4 most relevant chunks, with the back-end code ensuring that the chunks don't repeat
 - GPT-4o-mini generates a structured answer: recommendation, evidence, tradeoffs, confidence, and what to do if you disagree
-- Below the answer, there's an expandable section showing the exact text chunks that were used, so you can fact-check the AI against the actual paper
+- Below the answer, there's an expandable section that shows the exact text chunks that were used, so you can fact-check against the actual paper
 
 ---
 
@@ -127,7 +124,7 @@ streamlit run app.py
 
 ### Scenario: Interview prep for a consumer insights role
 
-Here's the situation I had in mind when building this. I had a first-round interview for a consumer insights analyst position at a mid-size retail company. In the job description they specifically mentioned "behavioral economics" and "customer decision-making frameworks." I found a well-cited academic paper on choice overload in retail environments about 21 pages dense with jargon, and uploaded it to the app.
+Here's the situation I had in mind when building this. As stated in the begining, I have a first-round interview for a consumer insights analyst position. In the job description they specifically mentioned "customer decision-making frameworks", of which I feel like I should do some more reserach on to fully understand. I find some well-cited academic papers on choice overload, about 21 pages dense with jargon, and upload it to the app!
 
 **My question:**
 
@@ -160,15 +157,15 @@ Highlight that research shows fewer options can enhance satisfaction and decisio
 
 ### Human interpretation
 
-I clicked open the retrieved chunks to double-check the study figures, and it looked accurate. It doesn't look the prettiest, but the AI got me 80% of the way there in a very short amount of time, and I did the remaining 20% verification myself.
+I clicked open the raw chunks section to double-check the study figures, and it looked accurate. It doesn't look the prettiest, but the AI got me 80% of the way there in a very short amount of time, and I did the remaining 20% verification by skimming the paper.
 
 ### The final decision
 
-If I were in an interview, I would use the choice overload finding as a talking point but frame it carefully as "research suggests" rather than "it's proven that." The AI's appeal path section actually prompted me to think deeper about that, which I probably wouldn't have done on my own.
+If I were in an interview, I would use the findingd as a talking point, but make sure to frame it carefully as "according to this research" rather than "it's proven that." I would overall want this to a supplement to my interview, show that I did my research, and spark a deeper conversation with the interviewer.
 
 ### The appeal / override path
 
-If something in the AI's summary had seemed off, like a number that felt too precise or a claim that didn't match what I half-remembered from skimming the paper, the retrieved chunks expander lets me go straight to the source text. From there, I can either verify it or flag it as something not to use.
+If something in the AI's summary had seemed off or inaccurate, like a claim that didn't match what I half-remembered from skimming the paper, the retrieved chunks section would let me go straight to the retwived text. I would also want to amke sure that the chunks reciever lines up with the paper itself, especially if I would be using direct numbers. Maybe even pull in several documents to cross-compare in the same way.
 
 ---
 
@@ -176,32 +173,28 @@ If something in the AI's summary had seemed off, like a number that felt too pre
 
 ### Where does the system intentionally stop?
 
-The system stops at explanation. It will not tell me whether the paper's research design is methodologically sound, whether the journal it was published in is reputable, or whether the findings have held up in later research. It only works with what's in the uploaded PDF.
+The system intentially stops at the explanation step. It will not tell me whether the paper's research design or methods is sound, whether it's credible, or compare the findings to later research. It only works with what's in the uploaded PDF, which comes with risks. It's up to me to make sure the data that I am feeding my RAG is good.
 
-That's a deliberate choice. I could have tried to make it search the web or cross-reference citations, but that would make the accountability question much harder. As it is, if the AI gets something wrong, I can trace it back to a specific chunk of text. If it were pulling from 10 different sources dynamically, that transparency would be a lot harder.
+If the AI gets something wrong, I like that I can trace it back to a specific chunk of text, but I have to be the one to make sure the text itself isn't wrong.
 
-The other intentional stopping point is that it doesn't tell me what to do. It gives me a recommendation based on the paper, but the "should I actually say this in my interview" question is mine to answer.
+Another stopping point is that the RAG doesn't tell me what to do. It gives me a recommendation based on the paper, and some ideas to apply it to the interview, but I am the one to dive deeper into the "so what".
 
 ### What risks remain?
 
-- **Chunking can cut context badly:** if a key caveat appears right before or after a chunk boundary, the AI might miss it entirely and give a more confident answer than the paper warrants
-- **The AI sounds confident even when it shouldn't:** even with the confidence level field in the prompt, LLM tends to produce fluent, authoritative-sounding text, a user who doesn't read carefully might miss uncertainty signals
-- **No paper quality filter:** I could upload a bad paper, a retracted study, or even a blog post saved as a PDF, and the system would treat it the same way. The output is only as good as what I upload
-- **Interview-specific risk:** if I repeated an AI-generated summary in an interview without fully understanding it and the interviewer asked a follow-up I couldn't answer, that would be worse than not knowing the paper at all. The tool is a starting point, not a substitute for understanding
+- **The AI sounds confident even when it shouldn't:** even with the confidence level section in the back-end code of the prompt, LLMs tends to produce fluent, authoritative-sounding text, which can be interpreted by a user as something to fully trust. Instead, double/cross-checking is important especially in a high-stakes employment opportunity.
+- **No paper quality filter:** I could upload a bad paper or even a blog post saved as a PDF, and the system would treat it the same way. The output is only as good as what I input.
+- **Interview-specific risk:** There is a risk of repeating an AI-generated summary in an interview without fully understanding it, or it being wrong, and the interviewer asked a follow-up I can't answer. It is up to me to have the AI output be a part of my research, not the whole thing. I would be caustous about not using this tool as a substitute for understanding the concepts.
 
 ### How could misuse occur?
 
-- Someone uploads only papers that support one side of an argument, generates a summary, and presents it as "research shows" without disclosing the selection
-- In a higher-stakes context than interview prep, say, a policy recommendation or business decision, someone treats the AI output as sufficient due diligence when it isn't
-- The structured format (Recommendation / Evidence / Confidence) might look more rigorous than it is. It's easy to mistake formatting for expertise
+- User uploads only papers that support one side of an argument, generates a bias summary and sells it as "reserach proves"
+- In a higher-stakes context than interview prep, someone treats the AI output as sufficient research
 
 ### What would governance look like at scale?
 
-If this became a tool used across a company or institution, I'd want a few things in place:
+If this became a tool used across a temp company or school, I think governance at scale would look like this:
 
-- **Required disclosure:** users acknowledge the output is a starting point, not a final source, before exporting or sharing an answer
-- **Source logging:** keep a record of which PDFs were uploaded and what questions were asked, so there's an audit trail if someone misrepresents what the research says
-- **Forced transparency:** the retrieved chunks section should be shown by default, not hidden behind an expander, so users always see what the AI is working from
-- **Domain escalation warnings:** for anything beyond low-stakes use (interview prep, coursework, general curiosity), a clear message should recommend expert review before acting on the findings
+- **Required disclosure:** users acknowledge the output is a starting point before more research/double checking, before stating an answer
+- **Source Records:** keep a record of which PDFs were uploaded and what questions were asked, so there's a trail if someone misrepresents what the research says
+- **Cleaner Evidence:** I would want to clean up the evidence section and go through more rigiourous testing to make sure the chunks are accurate and the LLM is pulling a reasonable answer from them
 
-For the scale of this class project, none of that is implemented. But I think being honest about where the guardrails are is important.
