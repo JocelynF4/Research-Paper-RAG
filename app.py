@@ -110,11 +110,16 @@ answer the user's question.
 
 Rules:
 - Explain as if talking to a curious person with no background in the field.
+- Provide a clear **Recommendation** based on the findings.
+- Back it up with **Evidence** (include citations/references to the retrieved document chunks).
+- Discuss **Tradeoffs** or limitations of the approach/findings.
+- State your **Confidence and uncertainty** level based on the provided context.
+- Provide an **Appeal or override path** (what someone should do if they disagree or need exceptions).
+- If the context doesn't contain enough info, say so honestly.
 - If a technical term is unavoidable, define it in parentheses.
 - Highlight the key takeaway, what the researchers did (simplified),
   and why it matters in the real world.
 - Use bullet points for clarity.
-- If the context doesn't contain enough info, say so honestly.
 
 Context from the paper(s):
 {context}
